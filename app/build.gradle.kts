@@ -65,6 +65,10 @@ dependencies {
 
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
+    implementation ("io.coil-kt:coil-compose:2.2.2")
+
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.30.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -20,4 +20,7 @@ interface Dao {
 
     @Query("SELECT * FROM members WHERE numberQR = :qr")
     fun getMemberByQr(qr: String): Member?
+
+    @Query("SELECT * FROM members WHERE name = :name")
+    fun getMemberByName(name: String): Member?
 }

@@ -10,4 +10,5 @@ data class Member(
     val rating: Int,
     val name: String,
     val numberQR: String,
+    val imageUri: String? = null
 )
