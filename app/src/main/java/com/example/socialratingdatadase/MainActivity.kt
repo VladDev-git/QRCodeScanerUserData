@@ -1,5 +1,6 @@
 package com.example.socialratingdatadase
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,8 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.example.socialratingdatadase.data.MainDb
 import com.example.socialratingdatadase.data.Member
@@ -23,6 +22,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -47,8 +47,8 @@ class MainActivity : ComponentActivity() {
                         setContent {
                             SocialRatingDataDaseTheme {
                                 if (insertDialogState.value) {
-                                    GetDialogName(
-                                        DialogStateValue = insertDialogState
+                                    InputNameDialog(
+                                        inputDialogState = insertDialogState
                                     ) { name ->
                                         CoroutineScope(Dispatchers.IO).launch {
                                             mainDb.dao.insertMember(
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
                                                         MainScreen(mainDb = mainDb,
                                                             onPhotoClick = { qr ->
                                                                 currentQrItem.value = qr
-                                                                selectPhoto(qr)
+                                                                selectPhoto()
                                                             },
                                                             onScanClick = { scan() }
                                                         )
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                                                     MainScreen(mainDb = mainDb,
                                                         onPhotoClick = { qr ->
                                                             currentQrItem.value = qr
-                                                            selectPhoto(qr)
+                                                            selectPhoto()
                                                         },
                                                         onScanClick = { scan() }
                                                     )
@@ -122,7 +122,9 @@ class MainActivity : ComponentActivity() {
         if (result.resultCode == RESULT_OK) {
             result.data?.data?.let { uri ->
                 selectedPhotoUri.value = uri
-                updatePhotoUriInDataBase(uri)
+                //updatePhotoUriInDataBase(uri)
+                val filePath = copyImageToAppDirectory(uri)
+                saveImagePathToDatabase(filePath.toString())
             }
         }
     }
@@ -135,7 +137,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(mainDb = mainDb,
                     onPhotoClick = { qr ->
                         currentQrItem.value = qr
-                        selectPhoto(currentQrItem.value.toString())
+                        selectPhoto()
                     }, onScanClick = { scan() })
             }
         }
@@ -151,8 +153,8 @@ class MainActivity : ComponentActivity() {
         launcher.launch(intent)
     }
 
-    private fun selectPhoto(qrCode: String) {
-        currentQrItem.value = qrCode
+    private fun selectPhoto() {
+        //currentQrItem.value = qrCode
         selectPhotoFromGallery(photoPickerLauncher)
     }
 
@@ -192,29 +194,31 @@ class MainActivity : ComponentActivity() {
             options.setBarcodeImageEnabled(true)
         }
     }
-}
 
-@Composable
-fun GetDialogName(
-    DialogStateValue: MutableState<Boolean>, onSubmit: (String) -> Unit
-) {
-    if (DialogStateValue.value) {
-        InputNameDialog(insertDialogState = DialogStateValue) { name ->
-            onSubmit(name)
+    @SuppressLint("Recycle")
+    private fun copyImageToAppDirectory(uri: Uri): String? {
+        val inputStream = contentResolver.openInputStream(uri)
+        val file = File(filesDir, "${System.currentTimeMillis()}.jpg")
+
+        inputStream.use { input ->
+            file.outputStream().use { output ->
+                input?.copyTo(output)
+            }
+        }
+        return file.absolutePath
+    }
+
+    private fun saveImagePathToDatabase(filePath: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val member = mainDb.dao.getMemberByQr(currentQrItem.value ?: "")
+            if (member != null) {
+                mainDb.dao.updateMember(member.copy(imageUri = filePath))
+            }
         }
     }
 }
 
-@Composable
-fun GetDialogRating(
-    DialogStateValue: MutableState<Boolean>, onSubmit: (Int) -> Unit
-) {
-    if (DialogStateValue.value) {
-        GetRatingScoreDialog(ratingDialogState = DialogStateValue) { rating ->
-            onSubmit(rating.toInt())
-        }
-    }
-}
+
 
 
 

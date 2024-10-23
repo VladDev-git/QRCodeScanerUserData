@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.example.socialratingdatadase.ui.theme.DialogDarkGray
 
 @Composable
-fun InputNameDialog(insertDialogState: MutableState<Boolean> ,onSubmit: (String) -> Unit) {
+fun InputNameDialog(inputDialogState: MutableState<Boolean> ,onSubmit: (String) -> Unit) {
     val dialogText = remember {
         mutableStateOf("")
     }
@@ -30,12 +30,12 @@ fun InputNameDialog(insertDialogState: MutableState<Boolean> ,onSubmit: (String)
         containerColor = DialogDarkGray,
         tonalElevation = 0.dp,
         onDismissRequest = {
-            insertDialogState.value = false
+            inputDialogState.value = false
         },
         confirmButton = {
             TextButton(onClick = {
                 onSubmit(dialogText.value)
-                insertDialogState.value = false
+                inputDialogState.value = false
             },
                 modifier = Modifier
                     .background(Color.Red)
@@ -48,7 +48,7 @@ fun InputNameDialog(insertDialogState: MutableState<Boolean> ,onSubmit: (String)
         },
         dismissButton = {
             TextButton(onClick = {
-                insertDialogState.value = false
+                inputDialogState.value = false
             },
                 modifier = Modifier
                     .background(Color.Red)
