@@ -23,4 +23,7 @@ interface Dao {
 
     @Query("SELECT * FROM members WHERE name = :name")
     fun getMemberByName(name: String): Member?
+
+    @Query("DELETE FROM members WHERE numberQR = :qr")
+    fun deleteMember(qr: String)
 }
