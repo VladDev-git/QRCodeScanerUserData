@@ -1,6 +1,7 @@
 package com.example.socialratingdatadase
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,13 +40,18 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.socialratingdatadase.data.MainDb
 import com.example.socialratingdatadase.data.Member
+import com.example.socialratingdatadase.dialogs.GetPenaltyRatingScoreDialog
+import com.example.socialratingdatadase.dialogs.GetRenameMemberDialog
 import com.example.socialratingdatadase.ui.theme.MemberCardColor
+import com.example.socialratingdatadase.ui.theme.OrangeTextColor
 import com.example.socialratingdatadase.ui.theme.ScanButtonColor
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.CoroutineScope
@@ -72,13 +78,15 @@ fun MainScreen(
         )
     }
     val members = mainDb.dao.getAllMembers().collectAsState(initial = emptyList()).value
+        .sortedByDescending { it.rating }
 
     Image(
         painter = painterResource(id = R.drawable.com_china), contentDescription = "Sky background",
         modifier = Modifier
             .fillMaxSize()
             .alpha(0.6f),
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Crop,
+        alpha = 0.8f
     )
     Column(
         modifier = Modifier
@@ -95,6 +103,26 @@ fun MainScreen(
                     onDeleteClick = { memberToDelete ->
                         CoroutineScope(Dispatchers.IO).launch {
                             mainDb.dao.deleteMember(memberToDelete)
+                        }
+                    },
+                    onPenaltyClick = { qrCode, rating ->
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val member = mainDb.dao.getMemberByQr(qrCode)
+                            if (member != null) {
+                                if (member.rating <= rating) {
+                                    mainDb.dao.updateMember(member.copy(rating = 0))
+                                } else {
+                                    mainDb.dao.updateMember(member.copy(rating = (member.rating - rating)))
+                                }
+                            }
+                        }
+                    },
+                    onRenameClick = { qrCode, newName ->
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val member = mainDb.dao.getMemberByQr(qrCode)
+                            if (member != null) {
+                                mainDb.dao.updateMember(member.copy(name = newName))
+                            }
                         }
                     }
                 )
@@ -125,8 +153,29 @@ fun MainScreen(
 }
 
 @Composable
-fun MemberCard(member: Member, onPhotoClick: (String) -> Unit, onDeleteClick: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
+fun MemberCard(member: Member, onPhotoClick: (String) -> Unit, onDeleteClick: (String) -> Unit,
+               onPenaltyClick: (String, Int) -> Unit, onRenameClick: (String, String) -> Unit) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+    val showPenaltyDialog = remember {
+        mutableStateOf(false)
+    }
+    val showRenameDialog = remember {
+        mutableStateOf(false)
+    }
+
+    if (showPenaltyDialog.value) {
+        GetPenaltyRatingScoreDialog(ratingDialogState = showPenaltyDialog) { rating ->
+            onPenaltyClick(member.numberQR, rating.toInt())
+        }
+    }
+    if (showRenameDialog.value) {
+        GetRenameMemberDialog(ratingDialogState = showRenameDialog) { newName ->
+            onRenameClick(member.numberQR, newName)
+
+        }
+    }
 
     Card(
         shape = RoundedCornerShape(13.dp),
@@ -165,18 +214,38 @@ fun MemberCard(member: Member, onPhotoClick: (String) -> Unit, onDeleteClick: (S
                     contentScale = ContentScale.Crop,
                 )
                 Column {
-                    Text(
-                        text = "Name: ${member.name}",
-                        fontSize = 16.sp,
-                        color = Color.Yellow,
-                        modifier = Modifier.padding(start = 10.dp, top = 5.dp)
-                    )
-                    Text(
-                        text = "Rating: ${member.rating}",
-                        fontSize = 16.sp,
-                        color = Color.Yellow,
-                        modifier = Modifier.padding(start = 10.dp, top = 5.dp)
-                    )
+                    Row {
+                        Text(
+                            text = "Name: ",
+                            fontSize = 16.sp,
+                            color = Color.Yellow,
+                            modifier = Modifier.padding(start = 10.dp, top = 5.dp),
+                            style = TextStyle(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = member.name,
+                            fontSize = 16.sp,
+                            color = OrangeTextColor,
+                            modifier = Modifier.padding(top = 5.dp),
+                            style = TextStyle(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                    Row {
+                        Text(
+                            text = "Social rating: ",
+                            fontSize = 16.sp,
+                            color = Color.Yellow,
+                            modifier = Modifier.padding(start = 10.dp, top = 5.dp),
+                            style = TextStyle(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = member.rating.toString(),
+                            fontSize = 16.sp,
+                            color = OrangeTextColor,
+                            modifier = Modifier.padding(top = 5.dp),
+                            style = TextStyle(fontWeight = FontWeight.Bold)
+                        )
+                    }
                 }
             }
             IconButton(
@@ -191,13 +260,28 @@ fun MemberCard(member: Member, onPhotoClick: (String) -> Unit, onDeleteClick: (S
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                offset = DpOffset(x = 0.dp, y = 0.dp)
+                offset = DpOffset(x = 0.dp, y = 0.dp),
+                modifier = Modifier.background(MemberCardColor)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Delete") },
+                    text = { Text("Delete member") },
                     onClick = {
                         expanded = false
                         onDeleteClick(member.numberQR)
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Penalty") },
+                    onClick = {
+                        expanded = false
+                        showPenaltyDialog.value = true
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Rename") },
+                    onClick = {
+                        expanded = false
+                        showRenameDialog.value = true
                     }
                 )
             }

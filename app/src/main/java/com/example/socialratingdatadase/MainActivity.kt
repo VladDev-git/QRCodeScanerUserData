@@ -154,7 +154,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun selectPhoto() {
-        //currentQrItem.value = qrCode
         selectPhotoFromGallery(photoPickerLauncher)
     }
 

@@ -142,3 +142,127 @@ fun GetRatingScoreDialog(ratingDialogState: MutableState<Boolean> ,onSubmit: (St
         },
     )
 }
+
+@Composable
+fun GetPenaltyRatingScoreDialog(ratingDialogState: MutableState<Boolean> ,onSubmit: (String) -> Unit) {
+    val dialogText = remember {
+        mutableStateOf("")
+    }
+    AlertDialog(
+        modifier = Modifier
+            .size(300.dp),
+        containerColor = DialogDarkGray,
+        tonalElevation = 0.dp,
+        onDismissRequest = {
+            ratingDialogState.value = false
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onSubmit(dialogText.value)
+                ratingDialogState.value = false
+            },
+                modifier = Modifier
+                    .background(Color.Red)
+            ) {
+                Text(
+                    text = "OK",
+                    color = Color.White
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                ratingDialogState.value = false
+            },
+                modifier = Modifier
+                    .background(Color.Red)
+            ) {
+                Text(
+                    text = "Cancel",
+                    color = Color.White
+                )
+            }
+        },
+        title = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(DialogDarkGray)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Enter rating score to penalty",
+                        color = Color.White
+                    )
+                    TextField(value = dialogText.value, onValueChange = {
+                        dialogText.value = it
+                    })
+                }
+            }
+        },
+    )
+}
+
+@Composable
+fun GetRenameMemberDialog(ratingDialogState: MutableState<Boolean> ,onSubmit: (String) -> Unit) {
+    val dialogText = remember {
+        mutableStateOf("")
+    }
+    AlertDialog(
+        modifier = Modifier
+            .size(300.dp),
+        containerColor = DialogDarkGray,
+        tonalElevation = 0.dp,
+        onDismissRequest = {
+            ratingDialogState.value = false
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onSubmit(dialogText.value)
+                ratingDialogState.value = false
+            },
+                modifier = Modifier
+                    .background(Color.Red)
+            ) {
+                Text(
+                    text = "OK",
+                    color = Color.White
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                ratingDialogState.value = false
+            },
+                modifier = Modifier
+                    .background(Color.Red)
+            ) {
+                Text(
+                    text = "Cancel",
+                    color = Color.White
+                )
+            }
+        },
+        title = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(DialogDarkGray)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Enter new name",
+                        color = Color.White
+                    )
+                    TextField(value = dialogText.value, onValueChange = {
+                        dialogText.value = it
+                    })
+                }
+            }
+        },
+    )
+}
